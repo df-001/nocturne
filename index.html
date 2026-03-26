@@ -348,13 +348,22 @@
       };
     }
 
+    function tryConnectEventStream() {
+      try {
+        connectEventStream();
+      } catch (err) {
+        console.error("Failed to open event stream", err);
+        addSystemMessage("Live updates are unavailable, but the server is online.");
+      }
+    }
+
     async function checkServerStatus() {
       try {
         const response = await fetch(`${SERVER_URL}/health`, { method: "GET" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         setServerOnlineState(true);
-        connectEventStream();
+        setTimeout(tryConnectEventStream, 0);
       } catch (err) {
         setServerOnlineState(false);
         if (!startupOfflineNoticeShown) {
