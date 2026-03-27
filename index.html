@@ -8,6 +8,54 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .message-wrapper,
+    .message-content,
+    .message-bubble,
+    .system-content,
+    .chat-input,
+    .welcome-title,
+    .chip,
+    .chip span {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .message-bubble,
+    .system-content,
+    .image-caption,
+    .image-meta,
+    .welcome-title,
+    .chip span,
+    .chat-input {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .generated-image {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 768px) {
+      .app-container,
+      .main-content,
+      .messages-container,
+      .input-container,
+      .chat-header,
+      .message-wrapper,
+      .message-content,
+      .message-bubble {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .suggestion-chips {
+        overflow-x: auto;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -130,10 +178,12 @@
     const SERVER_URL = "https://api.darkfast.uk";
     const SESSION_STORAGE_KEY = "chat_session_id";
     const CONVERSATION_ID = "default";
+    const CLIENT_RATE_LIMIT_MS = 1000;
     let serverOnline = false;
     let startupOfflineNoticeShown = false;
     let eventSource = null;
     let hasStartedChat = false;
+    let lastRequestAt = 0;
 
     marked.setOptions({
       breaks: true,
@@ -404,6 +454,14 @@
       
       const text = inputEl.value.trim();
       if (!text) return;
+
+      const now = Date.now();
+      const waitMs = CLIENT_RATE_LIMIT_MS - (now - lastRequestAt);
+      if (waitMs > 0) {
+        addSystemMessage(`Slow down a bit. Try again in ${(waitMs / 1000).toFixed(1)}s.`);
+        return;
+      }
+      lastRequestAt = now;
       
       addMessage(text, "user");
       inputEl.value = "";
